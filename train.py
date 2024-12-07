@@ -18,7 +18,7 @@ embedding_model.train(tokenized_lines = tokenized_lines,
                             vector_size = 300,
                             min_count = 1,
                             sg=0,
-                            epochs=5,
+                            epochs=50,
                             model_type="FastText",
                             verbose=True
 )

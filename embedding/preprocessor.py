@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 
-DATA_PREFIX = 'data/'
+DATA_PREFIX = '../data/'
 
 
 class PreProcessor:

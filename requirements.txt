@@ -1,0 +1,12 @@
+pandas
+nltk
+scikit-learn
+tensorflow
+keras
+keras-preprocessing
+numpy
+gensim
+tqdm
+dictionary
+re
+huggingface-hub

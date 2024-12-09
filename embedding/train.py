@@ -25,4 +25,4 @@ embedding_model.train(tokenized_lines = tokenized_lines,
                             
 
 # Step 3: Saving the model
-embedding_model.save("embedding.model", verbose=True)
+embedding_model.save("../checkpoint/embedding.model", verbose=True)

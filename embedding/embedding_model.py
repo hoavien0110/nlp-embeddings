@@ -1,6 +1,9 @@
+import os
+import sys
+sys.path.append(os.path.join('./'))
+
 from gensim.models import *
 from tqdm import tqdm
-from dictionary import Dictionary
 
 class EmbeddingModel:
     def __init__(self):
@@ -75,15 +78,15 @@ class EmbeddingModel:
         return self.model
     
 
-    def get_most_similar(self, word, topn=5, dictionary=None, source_col=None, target_col=None):
-        similar_words = self.model.wv.most_similar(word, topn=topn)
+    # def get_most_similar(self, word, topn=5, dictionary=None, source_col=None, target_col=None):
+    #     similar_words = self.model.wv.most_similar(word, topn=topn)
         
-        if dictionary and source_col and target_col:
-            result = []
-            for word, similarity in similar_words:
-                translation = dictionary.lookup(word, source_col, target_col)
-                result.append((word, similarity, translation))
-            return result
-        return similar_words
+    #     if dictionary and source_col and target_col:
+    #         result = []
+    #         for word, similarity in similar_words:
+    #             translation = dictionary.lookup(word, source_col, target_col)
+    #             result.append((word, similarity, translation))
+    #         return result
+    #     return similar_words
 
     

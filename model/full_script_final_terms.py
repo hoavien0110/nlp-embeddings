@@ -25,13 +25,13 @@ class Config:
 config = Config()
 
 embedding_model = EmbeddingModel()
-embedding_model.load("embedding.model", verbose=True)
+embedding_model.load("../checkpoint/embedding.model", verbose=True)
 print(embedding_model)
 
 dictionary = Dictionary()
 dictionary.load_from_excel("quocngu_sinonom.xlsx", verbose=True)
 
-df = pd.read_excel("data/data_collection.xlsx")
+df = pd.read_excel("../data/data_collection.xlsx")
 df.rename(columns={"Character": "Label"}, inplace=True)
 df.rename(columns={"Text": "sentence"}, inplace=True)
 

@@ -61,4 +61,5 @@ Sau khi huấn luyện, mô hình sẽ được kiểm thử trên dữ liệu k
 
 ## 4. Hướng dẫn chạy
 > Chạy file embedding/train.py để tạo model embedding.
+
 > Chạy file model/train_classifer.py để tạo model phân biệt.

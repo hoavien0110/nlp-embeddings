@@ -5,7 +5,7 @@ class Partitioner:
     def __init__(self):
         pass
 
-    def assign_continuous_partition_values(df, n_paritions, partition_column, ratio=None) -> pd.DataFrame:
+    def assign_continuous_partition_values(self, df, n_paritions, partition_column, ratio=None) -> pd.DataFrame:
         """
         Assigns continuous partition values to a DataFrame.
         
@@ -37,7 +37,7 @@ class Partitioner:
         return df
 
 
-    def group_partition(df, group_column, value_column, delimiter):
+    def group_partitions(self, df, group_column, value_column, delimiter):
         """
         Group the values in the value_column by the group_column.
         
@@ -57,4 +57,21 @@ class Partitioner:
         return grouped
 
 
+    def partition_and_group(self, df, value_column, partition_column, ratio=0.5, delimiter=None):
+        n_partitions = int(len(df) * ratio)
+        df = self.assign_continuous_partition_values(df, n_partitions, partition_column)
+        df = self.group_partitions(df, partition_column, value_column, delimiter=delimiter)
+        return df
+
+
+    def parition_and_group_for_each_category(self, df, value_column, category_column, partition_column="partition", ratio=0.5, delimiter=None):
+        result = pd.DataFrame(columns=[category_column, value_column])
+        for category, sub_df in df.groupby(category_column):
+            sub_df = sub_df.reset_index(drop=True)
+            sub_df = self.partition_and_group(sub_df, value_column, partition_column, ratio, delimiter)
+            sub_df[category_column] = category
+            result = pd.concat([result, sub_df], ignore_index=True)
+        return result
+    
+    
     

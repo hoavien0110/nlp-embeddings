@@ -4,6 +4,35 @@ import numpy as np
 class Partitioner:
     def __init__(self):
         pass
+    
+    
+    
+    def generate_positive_integer_series_with_sum(self, n, m, mean=0, std_dev=1):
+        # Step 1: Generate raw normal distribution
+        X_raw = np.random.lognormal(mean=mean, sigma=std_dev, size=m)
+        
+        # Step 2: Shift to ensure positivity
+        shift = abs(min(X_raw)) + 1  # Ensure all values are positive
+        X_shifted = X_raw + shift
+
+        # Step 3: Scale to sum to n
+        X_scaled = (n / np.sum(X_shifted)) * X_shifted
+
+        # Step 4: Round to integers
+        X_rounded = np.round(X_scaled).astype(int)
+
+        # Step 5: Adjust for sum to n
+        delta = n - np.sum(X_rounded)
+        while delta != 0:
+            idx = np.random.choice(range(m))  # Randomly pick an index
+            if delta > 0 and X_rounded[idx] > 0:
+                X_rounded[idx] += 1
+                delta -= 1
+            elif delta < 0 and X_rounded[idx] > 1:
+                X_rounded[idx] -= 1
+                delta += 1
+
+        return X_rounded
 
     def assign_continuous_partition_values(self, df, n_paritions, partition_column, ratio=None) -> pd.DataFrame:
         """
@@ -64,14 +93,21 @@ class Partitioner:
         return df
 
 
-    def parition_and_group_for_each_category(self, df, value_column, category_column, partition_column="partition", ratio=0.5, delimiter=None):
+    def parition_and_group_for_each_category(self, df, value_column, category_column, partition_column="partition", catwise_ratio=0.5, delimiter=None):
         result = pd.DataFrame(columns=[category_column, value_column])
         for category, sub_df in df.groupby(category_column):
             sub_df = sub_df.reset_index(drop=True)
-            sub_df = self.partition_and_group(sub_df, value_column, partition_column, ratio, delimiter)
+            sub_df = self.partition_and_group(sub_df, value_column, partition_column, catwise_ratio, delimiter)
             sub_df[category_column] = category
+            sub_df.drop(partition_column, axis=1, inplace=True)
             result = pd.concat([result, sub_df], ignore_index=True)
         return result
     
     
-    
+# test
+categories = sorted(np.random.choice(["A", "B", "C", "D", "E"], 200))
+values = list(range(200))
+df = pd.DataFrame({"category": categories, "value": values})
+partitioner = Partitioner()
+result = partitioner.parition_and_group_for_each_category(df, "value", "category", catwise_ratio=0.26)
+print(result)

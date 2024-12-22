@@ -247,24 +247,24 @@ class Partitioner:
 # ví dụ sử dụng
 
 
-partitioner = Partitioner()
+# partitioner = Partitioner()
 
-sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
-# sentences of format {source}_{index witihin corresponding source}
-sentences = []
-for i, src in enumerate(sources):
-    if i == 0 or src != sources[i - 1]:
-        sentences.append(f"{src}-0")
-    else:
-        sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
-df = pd.DataFrame({"source": sources, "sentence": sentences})
+# sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
+# # sentences of format {source}_{index witihin corresponding source}
+# sentences = []
+# for i, src in enumerate(sources):
+#     if i == 0 or src != sources[i - 1]:
+#         sentences.append(f"{src}-0")
+#     else:
+#         sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
+# df = pd.DataFrame({"source": sources, "sentence": sentences})
 
-print(df)
+# print(df)
 
 
-result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=0.2, weight_method="lognormal", separator=" ")
+# result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=0.2, weight_method="lognormal", separator=" ")
 
-print(result)
+# print(result)
 
 
 

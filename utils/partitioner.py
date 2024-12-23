@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import random
+import sys
+
+sys.path.append("../")
 
 class Partitioner:
     def __init__(self):
@@ -28,8 +31,8 @@ class Partitioner:
         """
         
 
-        if not value_list:
-            raise ValueError("`value_list` must not be empty.")
+        # if not value_list:
+            # raise ValueError("`value_list` must not be empty.")
         if any(x <= 0 for x in value_list):
             raise ValueError("All elements in `value_list` must be strictly positive.")
         if total_sum < min(value_list):
@@ -241,6 +244,8 @@ class Partitioner:
             
         # 5. Concatenate all processed subsets into one DataFrame
         result_df = pd.concat(results, ignore_index=True)
+        # swap sentence and source column
+        result_df = result_df[[source_column, sentence_column]]
         return result_df
         
 
@@ -249,23 +254,25 @@ class Partitioner:
 
 # partitioner = Partitioner()
 
-# sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
-# # sentences of format {source}_{index witihin corresponding source}
-# sentences = []
-# for i, src in enumerate(sources):
-#     if i == 0 or src != sources[i - 1]:
-#         sentences.append(f"{src}-0")
-#     else:
-#         sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
-# df = pd.DataFrame({"source": sources, "sentence": sentences})
+# # sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
+# # # sentences of format {source}_{index witihin corresponding source}
+# # sentences = []
+# # for i, src in enumerate(sources):
+# #     if i == 0 or src != sources[i - 1]:
+# #         sentences.append(f"{src}-0")
+# #     else:
+# #         sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
+# # df = pd.DataFrame({"source": sources, "sentence": sentences})
 
-# print(df)
+# # print(df)
 
-
-# result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=0.2, weight_method="lognormal", separator=" ")
-
-# print(result)
+# # df = pd.read_excel("../data/data_collection.xlsx")
+# df = pd.read_csv("../data/data_sentences.csv")
 
 
+# result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=0.2, weight_method="lognormal", separator = "")
 
+# # get label of each source from df and add to result
+# result = result.merge(df[["source", "label"]].drop_duplicates(), on="source", how="left")
 
+# result.to_csv("../data/polysen_corpus_2.csv", index=False)

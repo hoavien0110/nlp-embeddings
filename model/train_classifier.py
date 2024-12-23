@@ -49,7 +49,8 @@ class BiLSTMClassifier:
         Returns:
             pd.DataFrame: Cleaned DataFrame.
         """
-        df = load_and_clean_data(file_path)
+        df = pd.read_csv(file_path)
+        df['BinaryLabel'] = df['label'].apply(lambda x: 1 if x == 'Nom' else 0)
         data_sentences = df['sentence'].dropna().astype(str).apply(lambda x: re.sub(r'\s+|。', '', x)).tolist()
         corpus = [list(sentence) for sentence in data_sentences]
         return df, corpus
@@ -138,8 +139,30 @@ class BiLSTMClassifier:
         """
         self.model.save(save_path)
         print(f"Model saved to {save_path}")
+    
+    def test_model(self, test_path="../data/folds/polysen_corpus_0/0/test_0.csv"):
+        """
+        Test the trained model on the test set.
+        
+        Args:
+            X_test (np.array): Test feature set.
+            y_test (np.array): Test labels.
+        """
+        df = pd.read_csv(test_path)
+        test_sequences = self.tokenizer.texts_to_sequences(df['sentence'].tolist())
+        X_test = sequence.pad_sequences(test_sequences, maxlen=self.config.maxlen)
+        df['BinaryLabel'] = df['label'].apply(lambda x: 1 if x == 'Nom' else 0)
+        y_test = df['BinaryLabel']
+        y_pred = self.model.predict(X_test)
+        y_pred = (y_pred > 0.5).astype(int)
+        df['pred'] = y_pred
+        df.to_csv(test_path, index=False)
+        print("Confusion Matrix:")
+        print(confusion_matrix(y_test, y_pred))
+        print("Classification Report:")
+        print(classification_report(y_test, y_pred))
 
-    def run_pipeline(self, data_path="../data/data_collection.xlsx", save_model_path="../checkpoint/bilstm_classifier_model.h5"):
+    def run_pipeline(self, train_path="../data/data_collection.xlsx", save_model_path="../checkpoint/bilstm_classifier_model.h5", test_path="../data/folds/polysen_corpus_0/0/test_0.csv"):
         """
         Run the complete pipeline from data loading, processing, model training to model saving.
         
@@ -148,7 +171,7 @@ class BiLSTMClassifier:
             save_model_path (str): Path to save the trained model.
         """
         print("Step 1: Loading and cleaning data...")
-        df, corpus = self.load_and_preprocess_data(data_path)
+        df, corpus = self.load_and_preprocess_data(train_path)
         
         print("Step 2: Creating tokenizer...")
         sequences = self.create_tokenizer(corpus)
@@ -156,21 +179,29 @@ class BiLSTMClassifier:
         print("Step 3: Creating embedding matrix...")
         self.create_embedding_matrix()
         
-        print("Step 4: Preparing data for training...")
-        X_train, X_test, y_train, y_test = self.prepare_data(sequences, df)
+        # print("Step 4: Preparing data for training...")
+        # X_train, X_val, y_train, y_val = self.prepare_data(sequences, df)
         
-        print("Step 5: Building the BiLSTM model...")
+        print("Step 4: Building the BiLSTM model...")
         self.build_model()
         
-        print("Step 6: Training the model...")
+        print("Step 5: Training the model...")
+        X_train = sequence.pad_sequences(sequences, maxlen=self.config.maxlen)
+        y_train = df['BinaryLabel']
         self.train_model(X_train, y_train)
         
-        print("Step 7: Saving the trained model...")
+        print("Step 6: Saving the trained model...")
         self.save_model(save_model_path)
+
+        print("Step 7: Testing the model on the test set...")
+        self.test_model(test_path)
         
         print("Pipeline complete! Model saved to", save_model_path)
 
 
-if __name__ == "__main__":
-    classifier = BiLSTMClassifier()
-    classifier.run_pipeline()
+# if __name__ == "__main__":
+#     classifier = BiLSTMClassifier()
+#     classifier.run_pipeline(
+#         train_path="../data/folds/polysen_corpus_0/0/train_0.csv",
+#         test_path="../data/folds/polysen_corpus_0/0/test_0.csv"
+#     )

@@ -15,6 +15,11 @@ class PreProcessor:
             print("Read", len(result), "lines from", file_name)
         return result
     
+    def read_csv_corpus(self, file_name, verbose=False):
+        result = pd.read_csv(DATA_PREFIX + file_name)
+        if verbose:
+            print("Read", len(result), "lines from", file_name)
+        return result
     
     def remove_invalid_lines(self, lines, verbose=False):
         valid_lines = [line for line in lines if type(line) == str]

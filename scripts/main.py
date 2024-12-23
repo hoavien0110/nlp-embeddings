@@ -20,7 +20,7 @@ config = Config()
 def create_data():
     df = pd.read_csv("../data/data_sentences.csv")
 
-    for i in range(config.num_corpus - 1):
+    for i in range(config.num_corpus):
         result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=config.size_ratio, weight_method="lognormal", separator = "")
         result = result.merge(df[["source", "label"]].drop_duplicates(), on="source", how="left")
 
@@ -40,7 +40,7 @@ def create_data():
 if __name__ == "__main__":
     create_data()
 
-    for i in range(config.num_corpus - 1):
+    for i in range(config.num_corpus):
         for j in range(config.num_folds):
             train_embedding(f"folds/polysen_corpus_{i}/{j}/train_{j}.csv")
             classifier = BiLSTMClassifier()

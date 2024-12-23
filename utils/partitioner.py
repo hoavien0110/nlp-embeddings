@@ -200,21 +200,43 @@ class Partitioner:
     def generate_polysen_corpus_with_random_size_weights(self, df: pd.DataFrame, source_column, sentence_column, separator=None, distribution="uniform", custom_params=None, max_size=10, draw_distribution=False, verbose=False):
         """
         Generates a polysen corpus with random size weights based on a specified distribution.
-        Parameters:
-        df (pd.DataFrame): The input dataframe containing the data.
-        source_column (str): The column name in the dataframe that contains the source identifiers.
-        sentence_column (str): The column name in the dataframe that contains the sentences.
-        separator (str, optional): The separator to use between sentences. Defaults to None.
-        distribution (str, optional): The type of distribution to use for generating size weights. Defaults to "uniform".
-        custom_params (dict, optional): Custom parameters for the distribution. Defaults to None.
-        max_size (int, optional): The maximum size of the generated polysen corpus. Defaults to 10.
-        draw_distribution (bool, optional): Whether to draw the distribution plot. Defaults to False.
-        verbose (bool, optional): Whether to print detailed information. Defaults to False.
-        Returns:
-        pd.DataFrame: A dataframe containing the generated polysen corpus.
-        Raises:
-        ValueError: If the specified distribution is not valid.
-        """        
+
+        PARAMETERS:
+        `df`: `pd.DataFrame`  
+            The input dataframe containing the data.
+
+        `source_column`: `str`  
+            The column name in the dataframe that contains the source identifiers.
+
+        `sentence_column`: `str`  
+            The column name in the dataframe that contains the sentences.
+
+        `separator`: `str, optional`  
+            The separator to use between sentences. Defaults to None.
+
+        `distribution`: `str, optional`  
+            The type of distribution to use for generating size weights. Defaults to "uniform".
+
+        `custom_params`: `dict, optional`  
+            Custom parameters for the distribution. Defaults to None.
+
+        `max_size`: `int, optional`  
+            The maximum size of the generated polysen corpus. Defaults to 10.
+
+        `draw_distribution`: `bool, optional`  
+            Whether to draw the distribution plot. Defaults to False.
+
+        `verbose`: `bool, optional`  
+            Whether to print detailed information. Defaults to False.
+
+        RETURNS:
+        `pd.DataFrame`  
+            A dataframe containing the generated polysen corpus.
+
+        RAISES:
+        `ValueError`  
+            If the specified distribution is not valid.
+        """
         if distribution not in self.PROBABILITY_DENISTY_FUNCTIONS.keys():
             raise ValueError(f"Invalid distribution: {distribution}, must be one of {list(self.PROBABILITY_DENISTY_FUNCTIONS.keys())}")
         params = custom_params if custom_params is not None else self.PROBABILITY_DENISTY_FUNCTIONS[distribution]["params"]

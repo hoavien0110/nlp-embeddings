@@ -249,6 +249,73 @@ class Partitioner:
         return result_df
         
 
+class FoldSplitter:
+    def __init__ (self, model):
+        self.model = model
+    
+    
+    def split_folds(self, df, num_folds=5, shuffle=True, categorical_column=None, fold_column=None):
+        """
+        Split a DataFrame into multiple folds, ensuring that each category is represented in each fold.
+        Parameters:
+        
+        df: pd.DataFrame
+            The input DataFrame to be split.
+            
+        num_folds: int
+            The number of folds to split the DataFrame into.
+            
+        shuffle: bool
+            Whether to shuffle the DataFrame before splitting. Default is True.
+            
+        categorical_column: str, optional
+            The name of the column containing the categorical values to be balanced across folds.
+            If None, the DataFrame is split randomly without considering any category.
+            
+        fold_column: str, optional
+            The name of the column to store the fold number. If None, return list of DataFrames.
+        
+        Returns:
+            List or dataframe 
+        """
+        
+        # Shuffle the DataFrame if needed
+        if shuffle:
+            df = df.sample(frac=1).reset_index(drop=True)
+        
+        # If no categorical column is provided, split randomly
+        if categorical_column is None:
+            # Calculate the number of samples per fold
+            samples_per_fold = len(df) // num_folds
+            # Split the DataFrame into num_folds parts
+            folds = [df.iloc[i * samples_per_fold: (i + 1) * samples_per_fold] for i in range(num_folds)]
+            
+        else:
+            # Group the DataFrame by the categorical column
+            grouped = df.groupby(categorical_column)
+            # Initialize an empty list to store the folds
+            folds = [pd.DataFrame() for _ in range(num_folds)]
+            
+            # Iterate over the groups
+            for name, group in grouped:
+                # Calculate the number of samples per fold
+                samples_per_fold = len(group) // num_folds
+                # Split the group into num_folds parts
+                group_folds = [group.iloc[i * samples_per_fold: (i + 1) * samples_per_fold] for i in range(num_folds)]
+                
+                # Assign each part to the corresponding fold
+                for i in range(num_folds):
+                    folds[i] = pd.concat([folds[i], group_folds[i]])
+        
+        # If fold_column is provided, add the fold number to the DataFrame
+        if fold_column is not None:
+            for i, fold in enumerate(folds):
+                fold[fold_column] = i
+                # append 
+            return pd.concat(folds, ignore_index=True)
+        else:
+            return folds
+
 # ví dụ sử dụng
 
 

@@ -197,11 +197,3 @@ class BiLSTMClassifier:
         self.test_model(test_path)
         
         print("Pipeline complete! Model saved to", save_model_path)
-
-
-# if __name__ == "__main__":
-#     classifier = BiLSTMClassifier()
-#     classifier.run_pipeline(
-#         train_path="../data/folds/polysen_corpus_0/0/train_0.csv",
-#         test_path="../data/folds/polysen_corpus_0/0/test_0.csv"
-#     )

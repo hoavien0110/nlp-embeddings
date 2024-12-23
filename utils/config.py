@@ -6,3 +6,5 @@ class Config:
     size_ratio = 0.2  # ratio of the size of the training set to the size of the test set
     num_folds = 5  # number of folds
     num_corpus = 5
+    mu = 10
+    max_size = 20

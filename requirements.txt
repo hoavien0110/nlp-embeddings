@@ -10,3 +10,5 @@ tqdm
 dictionary
 re
 huggingface-hub
+scipy
+json

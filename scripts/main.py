@@ -21,14 +21,27 @@ def create_data():
     df = pd.read_csv("../data/data_sentences.csv")
 
     for i in range(config.num_corpus):
-        result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=config.size_ratio, weight_method="lognormal", separator = "")
+        result = partitioner.generate_polysen_corpus_with_random_size_weights(
+            df, 
+            "source", 
+            "sentence", 
+            separator = "", 
+            distribution="poisson",  # subject to change
+            custom_params={ # subject to change
+                "mu": config.mu
+                },
+            max_size=config.max_size)
+            
         result = result.merge(df[["source", "label"]].drop_duplicates(), on="source", how="left")
-
-        kf = GroupKFold(n_splits=config.num_folds)
+        # shuffle the data
+        result = result.sample(frac=1).reset_index(drop=True)
+        
+        print(result['label'].value_counts())
+        kf = KFold(n_splits=config.num_folds)
         if not os.path.exists(f"../data/folds/polysen_corpus_{i}"):
             os.makedirs(f"../data/folds/polysen_corpus_{i}")
 
-        for j, (train_index, test_index) in enumerate(kf.split(result, groups=result["source"])):
+        for j, (train_index, test_index) in enumerate(kf.split(result)):
             train = result.iloc[train_index]
             test = result.iloc[test_index]
             if not os.path.exists(f"../data/folds/polysen_corpus_{i}/{j}"):
@@ -48,5 +61,3 @@ if __name__ == "__main__":
                 train_path=f"../data/folds/polysen_corpus_{i}/{j}/train_{j}.csv",
                 test_path=f"../data/folds/polysen_corpus_{i}/{j}/test_{j}.csv"
             )
-
-

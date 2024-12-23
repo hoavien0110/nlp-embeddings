@@ -1,3 +1,5 @@
+import scipy.stats as stats 
+
 class Config:
     embedding_size = 300  # embedding size of word embedding
     maxlen = 100  # maximum length of a sentence
@@ -6,3 +8,4 @@ class Config:
     size_ratio = 0.2  # ratio of the size of the training set to the size of the test set
     num_folds = 5  # number of folds
     num_corpus = 5
+    

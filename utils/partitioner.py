@@ -2,154 +2,126 @@ import pandas as pd
 import numpy as np
 import random
 import sys
+import scipy.stats as stats
+import random
+from visualizer import plot_discrete_pdf
+import matplotlib.pyplot as plt
+import json
+
 
 sys.path.append("../")
 
+
+
+
 class Partitioner:
     def __init__(self):
-        pass
+        self.PROBABILITY_DENISTY_FUNCTIONS = {
+            "uniform":
+                {
+                    "pdf": stats.uniform.pdf,
+                    "params": {}
+                },
+            "exponential":
+                {
+                    "pdf": stats.expon.pdf,
+                    "params": {"scale": 1}
+                },
+            "normal":
+                {
+                    "pdf": stats.norm.pdf,
+                    "params": {"loc": 0, "scale": 1}
+                },
+            "gamma":
+                {
+                    "pdf": stats.gamma.pdf,
+                    "params": {"a": 1}
+                },
+            "lognormal":
+                {
+                    "pdf": stats.lognorm.pdf,
+                    "params": {"s": 1}
+                },
+            "poisson":
+                {
+                    "pdf": stats.poisson.pmf,
+                    "params": {"mu": 1}
+                }
+        }
+
+
+
     
-    def random_list_summing_to(self, total_sum, value_list, weight_list=None):
+    
+    def calculate_discrete_pdfs(self, values, **kwargs):
         """
-        Generate a random list of values from `value_list` that sum up to `total_sum`.
+        Calculate the discrete probability density function (PDF) for a list of values.
         Parameters:
-        total_sum: int
-            The target sum that the returned list should add up to.
-        value_list: list of int
-            A list of positive integers to choose from.
-        weight_list: list of float, optional
-            A list of non-negative weights corresponding to the likelihood of each value in `value_list` being picked. 
-            Must be the same length as `value_list`.
+        values: list
+            A list of values for which the PDF will be calculated.
+        pdf: function
+            The PDF function to be used for calculation.
+        params: dict
+            A dictionary of parameters to be passed to the PDF function.
         Returns:
-        list of int
-            A list of integers from `value_list` that sum up to `total_sum`.
-        Raises:
-        ValueError
-            If `value_list` is empty, contains non-positive values, or if `total_sum` is less than the smallest value in `value_list`.
-            If `weight_list` is provided and is not the same length as `value_list`, contains negative weights, or all weights are zero.
-            If it is impossible to form `total_sum` from the values in `value_list`.
+        list
+            A list of PDF values corresponding to the input value list.
+        
         """
-        
+        assert 'pdf' in kwargs, "pdf function must be provided"
+        assert 'params' in kwargs, "pdf parameters must be provided"
 
-        # if not value_list:
-            # raise ValueError("`value_list` must not be empty.")
-        if any(x <= 0 for x in value_list):
-            raise ValueError("All elements in `value_list` must be strictly positive.")
-        if total_sum < min(value_list):
-            raise ValueError(
-                f"Impossible to form total_sum={total_sum} from smallest value={min(value_list)}."
-            )
-        
-        # If weight_list is provided, some validations:
-        if weight_list is not None:
-            if len(weight_list) != len(value_list):
-                raise ValueError("`weight_list` must have the same length as `value_list`.")
-            if any(w < 0 for w in weight_list):
-                raise ValueError("Weights must be non-negative.")
-            # If all weights are zero, that would be invalid
-            if all(w == 0 for w in weight_list):
-                raise ValueError("All weights are zero; cannot sample from `value_list`.")
+        pdf_func = kwargs['pdf']
+        pdf_params = kwargs['params']
+        return [pdf_func(value, **pdf_params) for value in values]
 
+
+    def generate_size_weights(self, sizes, pdf_func=stats.uniform.pdf, **kwargs):
+        # Calculate the PDF values for the size list
+        pdf_values = self.calculate_discrete_pdfs(sizes, pdf=pdf_func, params=kwargs)
+        
+        # Normalize the PDF values
+        pdf_sum = sum(pdf_values)
+        weights = [pdf_value / pdf_sum for pdf_value in pdf_values]
+        return weights
+
+
+    def generate_integer_partition(self, target, values, weights):
+        remaining = target
         result = []
-        leftover = total_sum
-
-        # Keep picking while leftover isn't exactly one of our possible values
-        while leftover not in value_list:
-            # Determine which values are feasible (i.e., do not exceed leftover)
-            feasible_indices = [
-                i for i, val in enumerate(value_list) 
-                if val <= leftover
-            ]
-            if not feasible_indices:
-                # No valid pick can be made to continue
-                raise ValueError(
-                    f"Cannot proceed further. leftover={leftover} cannot be formed from {value_list}."
-                )
-            
-            # If weight_list is provided, filter it by feasible_indices
-            if weight_list is not None:
-                feasible_values = [value_list[i] for i in feasible_indices]
-                feasible_weights = [weight_list[i] for i in feasible_indices]
-                # random.choices was introduced in Python 3.6
-                # k=1 means we pick exactly 1 item
-                pick = random.choices(feasible_values, weights=feasible_weights, k=1)[0]
-            else:
-                # Otherwise pick uniformly from the feasible subset
-                pick = random.choice([value_list[i] for i in feasible_indices])
-
-            result.append(pick)
-            leftover -= pick
-            
-            # If leftover hits 0, we are done
-            if leftover == 0:
-                return result
-
-            # If leftover is below the smallest possible value but not zero, we can't proceed
-            if leftover < min(value_list) and leftover != 0:
-                raise ValueError(
-                    f"Stuck with leftover={leftover}, which is less than the minimum {min(value_list)}."
-                )
-
-        # leftover is exactly in value_list, so we can just add it as the final element
-        result.append(leftover)
-        
-        # shuffle
-        random.shuffle(result)
+        while remaining > 0:
+            value = random.choices(values, weights=weights)[0]
+            if value > remaining:
+                result.append(remaining)
+                break
+            result.append(value)
+            remaining -= value
         return result
-
     
-    def random_cut_points(self, length, value_list, weight_list=None):
+
+    def generate_random_cut_points(self, length, values, weights):
         """
         Generates a list of cumulative cut points based on random values summing to a specified length.
         Parameters:
         length: int
             The total length to which the random values should sum.
-        value_list: list
+        values: list
             A list of values to be used for generating random values.
-        weight_list: list, optional
+        weights: list, optional
             A list of weights corresponding to the values in value_list. If not provided, values are equally weighted.
         Returns:
         list
             A list of cumulative cut points starting from 0.
         """
-        
-        
-        random_list = self.random_list_summing_to(length, value_list, weight_list)
-        cumulative_list = np.cumsum(random_list).tolist()
+        integer_partition = self.generate_integer_partition(length, values, weights)
+        cumulative_list = np.cumsum(integer_partition).tolist()
         cmul_list = [0] + cumulative_list
         return cmul_list
     
 
 
-    def generate_weight_list(self, size_list, method="uniform"):
-        n = len(size_list)
-        if method == "uniform":
-            return [1] * n
-        if method == "normal":
-            mean = np.mean(size_list)
-            std_dev = np.std(size_list)
-            # sampling
-            samples = np.random.normal(mean, std_dev, n)
-            # Ensure no negative or zero weights
-            samples = np.maximum(samples, 1e-6)
-            return samples.tolist()
-        if method == "lognormal":
-            mean = np.mean(np.log(size_list))
-            std_dev = np.std(np.log(size_list))
-            # sampling
-            samples = np.random.lognormal(mean, std_dev, n)
-            # Ensure no negative or zero weights
-            samples = np.maximum(samples, 1e-6)
-            return samples.tolist()
-        if method == "exponential":
-            scale = 1.0 / np.mean(size_list)
-            samples = np.random.exponential(scale, n)
-            # Ensure no negative or zero weights
-            samples = np.maximum(samples, 1e-6)
-            return samples.tolist()
-        
-    
-    def generate_polysen_df(self, df: pd.DataFrame, text_column: str, size_list, weight_list=None, separator=None):
+
+    def generate_polysen_df(self, df: pd.DataFrame, text_column: str, sizes, size_weights=None, separator=None):
         """
         Generates a DataFrame by partitioning the input DataFrame into segments and merging the text values from each segment.
         Parameters:
@@ -172,7 +144,7 @@ class Partitioner:
         
         
         # 1. Generate cut indices
-        cuts = self.random_cut_points(len(df), size_list, weight_list)
+        cuts = self.generate_random_cut_points(len(df), sizes, size_weights)
         
         merged_chunks = []
         
@@ -198,27 +170,7 @@ class Partitioner:
         return pd.DataFrame({text_column: merged_chunks})
         
     
-    def generate_polysen_corpus(self, df: pd.DataFrame, source_column, sentence_column, size_ratio=0.25, weight_method="uniform", separator=None):
-        """
-        Generate a polysynthetic corpus from a DataFrame by grouping and merging sentences.
-        Parameters:
-        df: pd.DataFrame
-            The input DataFrame containing the data.
-        source_column: str
-            The name of the column to group by.
-        sentence_column: str
-            The name of the column containing sentences to be merged.
-        size_ratio: float, optional
-            The ratio of the subset size to be used for merging (default is 0.25).
-        weight_method: str, optional
-            The method to generate weights for merging ("uniform", "normal", "log-normal")
-        separator: str, optional
-            The separator to use when merging sentences (default is None).
-        Returns:
-        pd.DataFrame
-            A DataFrame containing the merged sentences grouped by the source column.
-        """
-        
+    def generate_polysen_corpus(self, df: pd.DataFrame, source_column, sentence_column, sizes, size_weights=None, separator=None):
         # 1. Sort inplace by the source column
         df_sorted = df.sort_values(by=source_column, kind='mergesort', ignore_index=False)
         
@@ -230,12 +182,8 @@ class Partitioner:
             # Select all rows for the current 'val'
             subset = df_sorted[df_sorted[source_column] == val].copy()
             
-            # Generate the size list and weight list
-            size_list = list(range(1, min(len(subset), max(1, int(size_ratio * len(subset))) + 1)))
-            weight_list = self.generate_weight_list(size_list, "lognormal")
-            
             # Cut and merge the subset
-            merged_chunk = self.generate_polysen_df(subset, sentence_column, size_list, weight_list, separator)
+            merged_chunk = self.generate_polysen_df(subset, sentence_column, sizes, size_weights, separator)
             merged_chunk[source_column] = val
             
             # Append the processed subset to the results list
@@ -249,97 +197,115 @@ class Partitioner:
         return result_df
         
 
-class FoldSplitter:
-    def __init__ (self, model):
-        self.model = model
-    
-    
-    def split_folds(self, df, num_folds=5, shuffle=True, categorical_column=None, fold_column=None):
+    def generate_polysen_corpus_with_random_size_weights(self, df: pd.DataFrame, source_column, sentence_column, separator=None, distribution="uniform", custom_params=None, max_size=10, draw_distribution=False, verbose=False):
         """
-        Split a DataFrame into multiple folds, ensuring that each category is represented in each fold.
+        Generates a polysen corpus with random size weights based on a specified distribution.
         Parameters:
-        
-        df: pd.DataFrame
-            The input DataFrame to be split.
-            
-        num_folds: int
-            The number of folds to split the DataFrame into.
-            
-        shuffle: bool
-            Whether to shuffle the DataFrame before splitting. Default is True.
-            
-        categorical_column: str, optional
-            The name of the column containing the categorical values to be balanced across folds.
-            If None, the DataFrame is split randomly without considering any category.
-            
-        fold_column: str, optional
-            The name of the column to store the fold number. If None, return list of DataFrames.
-        
+        df (pd.DataFrame): The input dataframe containing the data.
+        source_column (str): The column name in the dataframe that contains the source identifiers.
+        sentence_column (str): The column name in the dataframe that contains the sentences.
+        separator (str, optional): The separator to use between sentences. Defaults to None.
+        distribution (str, optional): The type of distribution to use for generating size weights. Defaults to "uniform".
+        custom_params (dict, optional): Custom parameters for the distribution. Defaults to None.
+        max_size (int, optional): The maximum size of the generated polysen corpus. Defaults to 10.
+        draw_distribution (bool, optional): Whether to draw the distribution plot. Defaults to False.
+        verbose (bool, optional): Whether to print detailed information. Defaults to False.
         Returns:
-            List or dataframe 
-        """
+        pd.DataFrame: A dataframe containing the generated polysen corpus.
+        Raises:
+        ValueError: If the specified distribution is not valid.
+        """        
+        if distribution not in self.PROBABILITY_DENISTY_FUNCTIONS.keys():
+            raise ValueError(f"Invalid distribution: {distribution}, must be one of {list(self.PROBABILITY_DENISTY_FUNCTIONS.keys())}")
+        params = custom_params if custom_params is not None else self.PROBABILITY_DENISTY_FUNCTIONS[distribution]["params"]
         
-        # Shuffle the DataFrame if needed
-        if shuffle:
-            df = df.sample(frac=1).reset_index(drop=True)
         
-        # If no categorical column is provided, split randomly
-        if categorical_column is None:
-            # Calculate the number of samples per fold
-            samples_per_fold = len(df) // num_folds
-            # Split the DataFrame into num_folds parts
-            folds = [df.iloc[i * samples_per_fold: (i + 1) * samples_per_fold] for i in range(num_folds)]
-            
-        else:
-            # Group the DataFrame by the categorical column
-            grouped = df.groupby(categorical_column)
-            # Initialize an empty list to store the folds
-            folds = [pd.DataFrame() for _ in range(num_folds)]
-            
-            # Iterate over the groups
-            for name, group in grouped:
-                # Calculate the number of samples per fold
-                samples_per_fold = len(group) // num_folds
-                # Split the group into num_folds parts
-                group_folds = [group.iloc[i * samples_per_fold: (i + 1) * samples_per_fold] for i in range(num_folds)]
-                
-                # Assign each part to the corresponding fold
-                for i in range(num_folds):
-                    folds[i] = pd.concat([folds[i], group_folds[i]])
-        
-        # If fold_column is provided, add the fold number to the DataFrame
-        if fold_column is not None:
-            for i, fold in enumerate(folds):
-                fold[fold_column] = i
-                # append 
-            return pd.concat(folds, ignore_index=True)
-        else:
-            return folds
+        # 1. Sort inplace by the source column
+        df_sorted = df.sort_values(by=source_column, kind='mergesort', ignore_index=False)
+        # Get the maximum number of sentences for each source
+        max_size = min(max_size, df_sorted.groupby(source_column).size().max())
 
-# ví dụ sử dụng
+        
+        # Generate sizes
+        sizes = list(range(1, max_size + 1))
+        size_weights = self.generate_size_weights(sizes, pdf_func=self.PROBABILITY_DENISTY_FUNCTIONS[distribution]["pdf"], **params)
+    
+        if verbose:
+            print("Distribution type:", distribution)
+            print("Distribution parameters:" )
+            print(json.dumps(params, indent=4))
+            print("Max size:", max_size)
+            for i in range(len(sizes)):
+                print(f"Size: {sizes[i]}, Weight: {size_weights[i].round(3)}")
+            
+        
+        # draw plot
+        if draw_distribution:
+            plt.gca().set_title(f"{distribution} distribution for paragraph size")
+            plt.gca().set_xlabel("Size")
+            plt.gca().set_ylabel("Probability")
+            # label on top of bar
+            plt.gca().set_xticks(sizes)
+            
+            plot_discrete_pdf(self.PROBABILITY_DENISTY_FUNCTIONS[distribution]["pdf"], 
+                params, 
+                sizes, 
+                ax=plt.gca(),
+                )
+            
+        # Generate the polysen corpus using the provided sizes and weights
+        return self.generate_polysen_corpus(df, source_column, sentence_column, sizes, size_weights, separator)
+        
 
+
+
+
+
+
+## ví dụ sử dụng: DỮ LIỆU GIẢ
+# sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
+# # sentences of format {source}_{index witihin corresponding source}
+# sentences = []
+# for i, src in enumerate(sources):
+#     if i == 0 or src != sources[i - 1]:
+#         sentences.append(f"{src}-0")
+#     else:
+#         sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
+# df = pd.DataFrame({"source": sources, "sentence": sentences})
+# print(df)
 
 # partitioner = Partitioner()
-
-# # sources = sorted(random.choices(["A", "B", "C", "D"], k=100))
-# # # sentences of format {source}_{index witihin corresponding source}
-# # sentences = []
-# # for i, src in enumerate(sources):
-# #     if i == 0 or src != sources[i - 1]:
-# #         sentences.append(f"{src}-0")
-# #     else:
-# #         sentences.append(f"{src}-{int(sentences[-1].split('-')[1]) + 1}")
-# # df = pd.DataFrame({"source": sources, "sentence": sentences})
-
-# # print(df)
-
-# # df = pd.read_excel("../data/data_collection.xlsx")
-# df = pd.read_csv("../data/data_sentences.csv")
+# result = partitioner.generate_polysen_corpus_with_random_size_weights(
+#     df, 
+#     "source", 
+#     "sentence", 
+#     separator = ".", 
+#     distribution="lognormal", 
+#     custom_params={
+#         "s": 1,
+#         "scale": 2 * np.exp(1**2)
+#         }, 
+#     draw_distribution=True)
+# print(result)
 
 
-# result = partitioner.generate_polysen_corpus(df, "source", "sentence", size_ratio=0.2, weight_method="lognormal", separator = "")
+# # VÍ DỤ SỬ DỤNG: DỮ LIỆU THẬT
+# df = pd.read_csv("data/data_sentences.csv") 
+# print(df.describe())
 
-# # get label of each source from df and add to result
-# result = result.merge(df[["source", "label"]].drop_duplicates(), on="source", how="left")
+# partitioner = Partitioner()
+# result = partitioner.generate_polysen_corpus_with_random_size_weights(
+#     df, 
+#     "source", 
+#     "sentence", 
+#     separator = ".", 
+#     distribution="poisson",  # subject to change
+#     custom_params={ # subject to change
+#         "mu": 5 
+#         },
+#     max_size=20,
+#     draw_distribution=True,
+#     verbose=True)
 
-# result.to_csv("../data/polysen_corpus_2.csv", index=False)
+
+# result.to_csv("data/dump.csv", index=False)

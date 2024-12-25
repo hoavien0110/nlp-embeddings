@@ -9,7 +9,7 @@ sys.path.append("../")
 from utils.config import Config
 from model.train_classifier import BiLSTMClassifier
 
-text_infer = "孔子在世時被譽為“天縱之聖”、“天之木鐸”，西漢時由董仲舒倡議，汉武帝施行“獨尊儒術”政策"
+text_infer = "𡖵𣌉咏咏𤿰"
 
 # Initialize the classifier
 classifier = BiLSTMClassifier()
@@ -34,7 +34,7 @@ text_seq = sequence.pad_sequences(text_seq, maxlen=classifier.config.maxlen)
 
 # Make predictions
 predictions = model.predict(text_seq)
-
+print(predictions)
 # Print the predictions
 if predictions[0][0] > 0.5:
     print("Predicted label: Nom")

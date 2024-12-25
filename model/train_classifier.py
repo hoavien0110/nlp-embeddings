@@ -162,6 +162,33 @@ class BiLSTMClassifier:
         print("Classification Report:")
         print(classification_report(y_test, y_pred))
 
+    def load_model(self, model_path):
+        """
+        Load a trained model from the specified file path.
+        
+        Args:
+            model_path (str): Path to the trained model.
+        
+        Returns:
+            Sequential: Loaded Keras Sequential model.
+        """
+        self.model = load_model(model_path)
+        return self.model
+    
+    def predict(self, text):
+        """
+        Predict the label for the given text.
+        
+        Args:
+            text (str): Input text for prediction.
+        
+        Returns:
+            int: Predicted label (0 or 1).
+        """
+        sequence = self.tokenizer.texts_to_sequences([text])
+        X = sequence.pad_sequences(sequence, maxlen=self.config.maxlen)
+        return self.model.predict(X)
+
     def run_pipeline(self, train_path="../data/data_collection.xlsx", save_model_path="../checkpoint/bilstm_classifier_model.h5", test_path="../data/folds/polysen_corpus_0/0/test_0.csv"):
         """
         Run the complete pipeline from data loading, processing, model training to model saving.

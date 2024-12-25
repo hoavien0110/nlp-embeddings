@@ -4,7 +4,7 @@ import random
 import sys
 import scipy.stats as stats
 import random
-# from visualizer import plot_discrete_pdf
+from visualizer import plot_discrete_pdf
 import matplotlib.pyplot as plt
 import json
 

@@ -75,14 +75,14 @@ model = Sequential()
 
 
 
-## 4. Hướng dẫn chạy
-### 4.1 Huấn luyện, chia dữ liệu và xem kết quả
+## 5. Hướng dẫn chạy
+### 5.1 Huấn luyện, chia dữ liệu và xem kết quả
 ```
 pip install -r requirements.txt
 cd scripts
 python main.py
 ```
-### 4.2 Dự đoán cho một văn bản (câu hoặc đoạn)
+### 5.2 Dự đoán cho một văn bản (câu hoặc đoạn)
 ```
 pip install -r requirements.txt
 cd scripts
